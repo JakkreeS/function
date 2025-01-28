@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เกมส์จับคู่คำศัพท์ สำหรับเด็ก</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap');
+    body {
+      font-family: 'Prompt', Arial, sans-serif;
+      background-image: url('https://lh3.googleusercontent.com/d/1cRjmewsu6G3stxXSqMZO7l1-b1Rhs4Bt');
+      height: 80%;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0.1, 0.1, 0.1, 0.5);
+      max-width: 80%;
+      width: 80%;
+      height: 80%;
+      min-width: 300px;
+      position: relative;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card {
+      padding: 15px;
+      background: white;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.15);
+      background-color: #f1f3f5;
+    }
+    .card.green {
+      border-color: #28a745;
+      background-color: #d4edda;
+      cursor: not-allowed;
+    }
+    .card.red {
+      border-color: #dc3545;
+      background-color: #f8d7da;
+    }
+    .timer {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: red;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 5px 10px;
+      border-radius: 15px;
+    }
+    #start-button {
+      font-family: 'Prompt', Arial, sans-serif;
+      position: absolute;
+      top: 10px;
+      right: 80px;
+      font-size: 1em;
+      padding: 5px 10px;
+      background-color: white;
+      color: red;
+      border-radius: 15px;
+    }
+    #end-score {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #333;
+      display: none;
+    }
+    @media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr); /* สำหรับหน้าจอใหญ่ ให้กลับเป็น 2 คอลัมน์ */
+  }
+}
+      
+      
+      
+      .column {
+        width: 100%;
+      }
+      #start-button {
+        right: 10px;
+      }
+    }
+    @media (max-width: 480px) {
+      .container {
+        width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>เกมส์จับหมู่ฟังก์ชัน</h1>
+    <button id="start-button">เริ่มเกมใหม่</button>
+    <div id="timer-container" class="timer">เวลา: 02:00</div>
+    <div id="end-score">คุณได้คะแนน: 0</div>
+    <div id="game-board" class="grid" style="display: none;">
+      <div class="column" id="left-column"></div>
+      <div class="column" id="right-column"></div>
+    </div>
+  </div>
+
+  <script>
+    // คำศัพท์สำหรับเด็ก
+    const elementsData = [
+{ english: "Amine", thai: "RNH₂" },
+{ english: "Alkyne", thai: "CₙH₂ₙ₋₂" },
+{ english: "Aldehyde", thai: "RCHO" },
+{ english: "Ether", thai: "ROR'" },
+{ english: "Ketone", thai: "RCOR'" },
+{ english: "Amide", thai: "RCONH₂" },
+{ english: "Alkane", thai: "CₙH₂ₙ₊₂" },
+{ english: "Ester", thai: "RCOOR'" },
+{ english: "Alcohol", thai: "ROH" },
+{ english: "Alkene", thai: "CₙH₂ₙ" },
+{ english: "Carboxylic acid", thai: "RCOOH" }
+
+
+    ];
+
+    const pairCount = 5;
+    let selectedLeft = null;
+    let selectedRight = null;
+    let remainingPairs = [];
+    let score = 0;
+    let timer = 120;
+    let countdownInterval;
+
+    const startButton = document.getElementById("start-button");
+    const gameBoard = document.getElementById("game-board");
+    const leftColumn = document.getElementById("left-column");
+    const rightColumn = document.getElementById("right-column");
+    const timerContainer = document.getElementById("timer-container");
+    const endScore = document.getElementById("end-score");
+
+    const shuffle = (array) => array.sort(() => Math.random() - 0.5);
+
+    const getRandomPairs = () => shuffle(elementsData).slice(0, pairCount);
+
+    const updateTimer = () => {
+      timerContainer.textContent = `เวลา: ${Math.floor(timer / 60)}:${(timer % 60).toString().padStart(2, '0')}`;
+    };
+
+    const loadNewRound = () => {
+      leftColumn.innerHTML = "";
+      rightColumn.innerHTML = "";
+      remainingPairs = getRandomPairs();
+
+      shuffle(remainingPairs).forEach((element) => {
+        leftColumn.appendChild(createCard(element.english, true));
+      });
+
+      shuffle(remainingPairs).forEach((element) => {
+        rightColumn.appendChild(createCard(element.thai, false));
+      });
+
+      selectedLeft = null;
+      selectedRight = null;
+    };
+
+    const createCard = (content, isLeft) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.textContent = content;
+      card.dataset.content = content;
+      card.addEventListener("click", () => handleCardClick(card, isLeft));
+      return card;
+    };
+
+    const handleCardClick = (card, isLeft) => {
+      if (card.classList.contains("green")) return;
+
+      if (isLeft) {
+        if (selectedLeft) selectedLeft.classList.remove("selected");
+        selectedLeft = card;
+      } else {
+        if (selectedRight) selectedRight.classList.remove("selected");
+        selectedRight = card;
+      }
+
+      card.style.transform = "scale(1.1)";
+      setTimeout(() => (card.style.transform = "scale(1)"), 200);
+
+      if (selectedLeft && selectedRight) {
+        checkMatch();
+      }
+    };
+
+    const checkMatch = () => {
+      const leftEnglish = selectedLeft.dataset.content;
+      const rightThai = selectedRight.dataset.content;
+
+      const matchedPair = remainingPairs.find(pair => pair.english === leftEnglish && pair.thai === rightThai);
+
+      if (matchedPair) {
+        selectedLeft.classList.add("green");
+        selectedRight.classList.add("green");
+
+        remainingPairs = remainingPairs.filter(pair => pair !== matchedPair);
+        score++;
+
+        if (remainingPairs.length === 0) {
+          setTimeout(() => {
+            loadNewRound();
+          }, 1000);
+        }
+
+        selectedLeft = null;
+        selectedRight = null;
+      } else {
+        selectedLeft.classList.add("red");
+        selectedRight.classList.add("red");
+
+        setTimeout(() => {
+          selectedLeft.classList.remove("red");
+          selectedRight.classList.remove("red");
+          selectedLeft = null;
+          selectedRight = null;
+        }, 500);
+      }
+    };
+
+    const startGame = () => {
+      score = 0;
+      timer = 120;
+      updateTimer();
+      clearInterval(countdownInterval);
+      endScore.style.display = "none";
+
+      loadNewRound();
+      gameBoard.style.display = "flex";
+
+      countdownInterval = setInterval(() => {
+        timer--;
+        updateTimer();
+
+        if (timer <= 0) {
+          clearInterval(countdownInterval);
+          gameBoard.style.display = "none";
+          endScore.textContent = `คุณได้คะแนน: ${score}`;
+          endScore.style.display = "block";
+        }
+      }, 1000);
+    };
+
+    startButton.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
